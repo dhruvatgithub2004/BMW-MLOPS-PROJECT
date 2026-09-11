@@ -1,5 +1,6 @@
 pandas
 mlflow
+dagshub
 matplotlib
 numpy
 scikit-learn

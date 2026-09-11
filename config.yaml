@@ -1,0 +1,19 @@
+data_source:
+  raw_data_path: data/raw/bmw.csv
+
+data_ingestion:
+  train_test_dir: data/interim
+
+data_transformation:
+  processed_data_dir: data/processed
+  preprocessor_path: models/preprocessor.pkl
+
+model_trainer:
+  model_dir: models
+  model_path: models/model.pkl
+
+mlflow:
+  tracking_uri: https://dagshub.com/dhruvatgithub2004/BMW-MLOPS-PROJECT.mlflow
+  dagshub_repo_owner: dhruvatgithub2004
+  dagshub_repo_name: BMW-MLOPS-PROJECT
+  experiment_name: BMW car prediction experiment
