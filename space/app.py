@@ -8,6 +8,7 @@ from pathlib import Path
 import gradio as gr
 import joblib
 import pandas as pd
+import spaces
 
 MODEL_DIR = Path(__file__).parent / "models"
 preprocessor = joblib.load(MODEL_DIR / "preprocessor.pkl")
@@ -23,6 +24,7 @@ TRANSMISSION_CHOICES = ["Automatic", "Manual", "Semi-Auto"]
 FUEL_CHOICES = ["Diesel", "Electric", "Hybrid", "Other", "Petrol"]
 
 
+@spaces.GPU
 def predict_price(model_name, year, transmission, mileage, fuel_type, tax, mpg, engine_size):
     df = pd.DataFrame([{
         "model": model_name,

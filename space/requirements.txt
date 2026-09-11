@@ -1,5 +1,6 @@
 gradio
+spaces
 joblib==1.5.3
 pandas
 numpy
-scikit-learn==1.8.0
+scikit-learn<1.8

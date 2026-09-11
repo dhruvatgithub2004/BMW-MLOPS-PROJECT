@@ -237,10 +237,34 @@ Task type: **regression**. Evaluation metrics: R², MAE, RMSE.
       auto-generated REST endpoint (`POST /gradio_api/call/predict_price` → poll by `event_id`) —
       also returned £21,551.10. Confirmed `python -m pytest` (9 passed) still green after the
       gradio install touched shared `fastapi`/`starlette` versions.
-- [ ] Push `space/` to an actual Hugging Face Space (needs the user's HF login — not something
-      done from here): create a Space with SDK **Gradio**, then either copy `space/`'s contents
-      into that Space's git repo and push, or `huggingface-cli upload`. Confirm it builds and the
-      public URL serves predictions.
+- [x] **Live**: https://huggingface.co/spaces/dhruvdesai15/bmw_car_price_prediction — pushed via
+      `hf auth login` (device OAuth, user-authenticated) + `hf upload ... --repo-type=space`.
+      Verified by calling the live REST endpoint directly: same £21,551.10 prediction as every
+      local test.
+
+  > Three real deploy-time failures hit and fixed, in order:
+  > 1. **Build failure** — `scikit-learn==1.8.0` requires Python ≥3.11, but HF's Gradio-SDK Spaces
+  >    build on a fixed Python 3.10 base image that a `python_version` frontmatter override did
+  >    NOT change (tried it; had no effect on rebuild — that field appears not to be honored for
+  >    this SDK, or only applies at Space creation). Fixed by relaxing the pin to
+  >    `scikit-learn<1.8` (resolves to 1.7.2). Confirmed this doesn't break the pickle: sklearn
+  >    emits `InconsistentVersionWarning` for each estimator (OneHotEncoder, StandardScaler,
+  >    ColumnTransformer, DecisionTreeRegressor, RandomForestRegressor) but loads and predicts
+  >    correctly — the 1.8.0→1.7.2 gap turned out to be within its stated compatibility tolerance.
+  > 2. **Runtime failure** — `RUNTIME_ERROR`, `"No @spaces.GPU function detected during startup"`.
+  >    This account's Space creation defaulted to **ZeroGPU (`zero-a10g`) hardware**, which requires
+  >    at least one `@spaces.GPU`-decorated function or the app refuses to start. Attempted to
+  >    downgrade to `cpu-basic` via the Settings UI — blocked: **on this account, free `cpu-basic`
+  >    Gradio hosting itself requires a PRO subscription; only ZeroGPU is free** (confirmed via the
+  >    `hf repos create --flavor cpu-basic` API call, which 402'd with that exact message). So
+  >    ZeroGPU is the only free path here, not a detour from one. Fixed by decorating
+  >    `predict_price` with `@spaces.GPU` — it's a no-op locally (outside a real Space) and the
+  >    function body is unchanged plain CPU sklearn code; the decorator only exists to satisfy
+  >    ZeroGPU's startup check. Real tradeoff accepted: each prediction now pays GPU-allocation
+  >    latency it doesn't need, and shares this account's metered ZeroGPU quota.
+  > 3. Deleted and recreated the Space once via `hf repos create ... --flavor zero-a10g` after an
+  >    earlier `hf repos delete` (needed to get hardware explicitly right, since the settings-UI
+  >    downgrade path was blocked as above).
 
 ### Phase 12 — Monitoring & maintenance
 - [ ] Log incoming prediction requests/responses for later drift analysis.
