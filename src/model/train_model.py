@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from src import logger
-from src.utils.common import create_directories, read_yaml
+from src.utils.common import create_directories, read_yaml, save_json
 
 CONFIG_PATH = Path("config.yaml")
 PARAMS_PATH = Path("params.yaml")
@@ -96,6 +96,14 @@ def main():
         model_path = Path(config.model_trainer.model_path)
         joblib.dump(best_model, model_path)
         logger.info(f"Best model saved to {model_path}")
+
+        metrics_path = Path(config.reports.metrics_path)
+        create_directories([metrics_path.parent])
+        save_json(metrics_path, {
+            "best_model": best_name,
+            "best_model_metrics": results[best_name]["metrics"],
+            "all_models": {name: r["metrics"] for name, r in results.items()},
+        })
     except Exception as e:
         logger.exception(f"Model training failed: {e}")
         raise

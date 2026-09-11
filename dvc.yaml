@@ -1,0 +1,47 @@
+stages:
+  data_ingestion:
+    cmd: python -m src.data.data_ingestion
+    deps:
+      - src/data/data_ingestion.py
+      - src/utils/common.py
+      - data/raw/bmw.csv
+      - config.yaml
+    params:
+      - data_ingestion.test_size
+      - data_ingestion.random_state
+    outs:
+      - data/interim/train.csv
+      - data/interim/test.csv
+
+  build_features:
+    cmd: python -m src.features.build_features
+    deps:
+      - src/features/build_features.py
+      - src/utils/common.py
+      - data/interim/train.csv
+      - data/interim/test.csv
+      - config.yaml
+    outs:
+      - data/processed/X_train.npy
+      - data/processed/y_train.npy
+      - data/processed/X_test.npy
+      - data/processed/y_test.npy
+      - models/preprocessor.pkl
+
+  train:
+    cmd: python -m src.model.train_model
+    deps:
+      - src/model/train_model.py
+      - src/utils/common.py
+      - data/processed/X_train.npy
+      - data/processed/y_train.npy
+      - data/processed/X_test.npy
+      - data/processed/y_test.npy
+      - config.yaml
+    params:
+      - model_trainer.random_forest
+    outs:
+      - models/model.pkl
+    metrics:
+      - reports/metrics.json:
+          cache: false

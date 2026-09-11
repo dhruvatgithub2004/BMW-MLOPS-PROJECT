@@ -70,7 +70,9 @@ Task type: **regression**. Evaluation metrics: R², MAE, RMSE.
 - [x] Basic schema/sanity checks (expected columns present).
 - [x] Train/test split (`test_size` from `params.yaml`), written to `data/interim/train.csv` and
       `data/interim/test.csv`.
-- [ ] `dvc add`/pipeline-track the raw data so it's versioned outside git.
+- [x] `dvc add data/raw/bmw.csv` — raw data is now DVC-tracked (`data/raw/bmw.csv.dvc`), and the
+      blanket `/data/` rule was removed from `.gitignore` in favor of the per-directory
+      `.gitignore` files DVC manages itself (see Phase 6).
 
 ### Phase 2 — EDA (already mostly done in the notebook)
 - [ ] Port the key findings from `notebooks/BMW car prediction.ipynb` into short notes here or
@@ -118,10 +120,35 @@ Task type: **regression**. Evaluation metrics: R², MAE, RMSE.
 - [ ] Promote the winning run's model version to a "staging"/"production" alias in the registry.
 
 ### Phase 6 — DVC pipeline (`dvc.yaml`)
-- [ ] Define stages: `data_ingestion → feature_engineering → train → evaluate`, each stage's
-      `cmd`, `deps`, `params`, and `outs` wired to the scripts above.
-- [ ] `dvc repro` should reproduce the whole pipeline from raw data to trained model deterministically.
+- [x] Define stages: `data_ingestion → build_features → train`, each stage's `cmd`, `deps`, `params`,
+      and `outs` wired to the scripts above.
+
+  > Design note: no separate `evaluate` stage — `train_model.py` already evaluates both candidates
+  > on the test set as part of training, so the `train` stage writes `reports/metrics.json`
+  > (`cache: false`, tracked in git directly) as its `metrics` output instead of a redundant stage
+  > that would reload the model and recompute the same numbers.
+
+- [x] `dvc repro` reproduces the whole pipeline deterministically — verified: ran it twice back to
+      back, second run reported "Data and pipelines are up to date" for all 3 stages.
+- [x] `dvc metrics show` renders `reports/metrics.json` as a table (best model + both candidates'
+      R²/MAE/RMSE), so metrics are diffable across commits without opening DagsHub.
 - [ ] Commit `dvc.lock` alongside code changes so pipeline state is reproducible from git history.
+
+  > Found and fixed two real bugs while building this:
+  > 1. `dvc.yaml`'s output directories (`data/interim/`, `data/processed/`) weren't getting their
+  >    `.gitignore` entries written because those stages had already been run manually (outside
+  >    DVC) before `dvc.yaml` existed, so DVC's first `dvc repro` saw matching output hashes and
+  >    treated the stages as already-satisfied without ever "checking them in." Fixed by forcing
+  >    `dvc repro -f data_ingestion build_features` once, which made DVC do its normal bookkeeping.
+  >    Verified with `git add -A --dry-run`: only `.gitignore`/`.gitkeep`/`.dvc` pointer files and
+  >    `dvc.lock`/`dvc.yaml`/`reports/metrics.json` would be staged — no raw/interim/processed data.
+  > 2. `dvc repro` crashed running the `train` stage: mlflow writes an emoji (`🏃`) to stdout, which
+  >    crashes on Windows' default `cp1252` console codepage. Fixed permanently in `src/__init__.py`
+  >    by reconfiguring `sys.stdout`/`sys.stderr` to UTF-8 on import, rather than relying on
+  >    `PYTHONUTF8=1` being set by whoever runs the pipeline.
+  > 3. The root `.gitignore`'s blanket `/data/` rule was silently swallowing DVC's own `.dvc`
+  >    pointer files (`dvc add` failed with "bad DVC file name ... is git-ignored"). Replaced it
+  >    with a comment — DVC now manages exclusion per-directory itself.
 
 ### Phase 7 — Inference (`src/model/predict_model.py`)
 - [x] Load `models/model.pkl` and the fitted `models/preprocessor.pkl` (lazily cached module-level).

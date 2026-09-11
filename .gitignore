@@ -75,8 +75,8 @@ target/
 # Jupyter NB Checkpoints
 .ipynb_checkpoints/
 
-# exclude data from source control by default
-/data/
+# data itself is excluded from source control; DVC-tracked files get their own
+# .gitignore entries (per directory) automatically when `dvc add`/`dvc repro` runs
 
 # model/pipeline artifacts are versioned with DVC, not git
 /models/*.pkl

@@ -1,0 +1,5 @@
+outs:
+- md5: 94005d0de20a1ea86f02083c3a68bbbb
+  size: 574212
+  hash: md5
+  path: bmw.csv

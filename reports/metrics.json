@@ -1,0 +1,20 @@
+{
+    "best_model": "Random Forest Regressor",
+    "best_model_metrics": {
+        "r2_score": 0.9426379683773587,
+        "mae": 1608.3066199281402,
+        "rmse": 2723.558585851387
+    },
+    "all_models": {
+        "Linear Regression": {
+            "r2_score": 0.8598093284080306,
+            "mae": 2821.980376044219,
+            "rmse": 4257.787842417903
+        },
+        "Random Forest Regressor": {
+            "r2_score": 0.9426379683773587,
+            "mae": 1608.3066199281402,
+            "rmse": 2723.558585851387
+        }
+    }
+}

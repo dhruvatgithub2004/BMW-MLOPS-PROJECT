@@ -1,0 +1,123 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python -m src.data.data_ingestion
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: 10440e7cb765c274fe062194459ca89d
+      size: 529
+    - path: data/raw/bmw.csv
+      hash: md5
+      md5: 94005d0de20a1ea86f02083c3a68bbbb
+      size: 574212
+    - path: src/data/data_ingestion.py
+      hash: md5
+      md5: 2cf13f0bdc9756c9616676461f3ec0dc
+      size: 2856
+    - path: src/utils/common.py
+      hash: md5
+      md5: 95f0ae6cbee3f40a9ff05f68cb9e0fe1
+      size: 1261
+    params:
+      params.yaml:
+        data_ingestion.random_state: 42
+        data_ingestion.test_size: 0.2
+    outs:
+    - path: data/interim/test.csv
+      hash: md5
+      md5: 2cd4be44236b10d7047386999d5c3855
+      size: 116420
+    - path: data/interim/train.csv
+      hash: md5
+      md5: 8defbc92e96690aa749bd130f0e4b475
+      size: 465588
+  build_features:
+    cmd: python -m src.features.build_features
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: 10440e7cb765c274fe062194459ca89d
+      size: 529
+    - path: data/interim/test.csv
+      hash: md5
+      md5: 2cd4be44236b10d7047386999d5c3855
+      size: 116420
+    - path: data/interim/train.csv
+      hash: md5
+      md5: 8defbc92e96690aa749bd130f0e4b475
+      size: 465588
+    - path: src/features/build_features.py
+      hash: md5
+      md5: c4226b7f8c3ba76f9f0020c2a6c9c6ce
+      size: 2911
+    - path: src/utils/common.py
+      hash: md5
+      md5: 95f0ae6cbee3f40a9ff05f68cb9e0fe1
+      size: 1261
+    outs:
+    - path: data/processed/X_test.npy
+      hash: md5
+      md5: e706292eb710d5147dd2f57545e1816c
+      size: 638600
+    - path: data/processed/X_train.npy
+      hash: md5
+      md5: c915fef183e4f935a19ad16081d954b4
+      size: 2552832
+    - path: data/processed/y_test.npy
+      hash: md5
+      md5: 84d3a1e5a5fb761f10814952629e3111
+      size: 17384
+    - path: data/processed/y_train.npy
+      hash: md5
+      md5: 4011cd52afc0b45f905df4c52d57b85e
+      size: 69120
+    - path: models/preprocessor.pkl
+      hash: md5
+      md5: 5ac30f26d3b3ab67f7e960b136355e01
+      size: 3283
+  train:
+    cmd: python -m src.model.train_model
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: 10440e7cb765c274fe062194459ca89d
+      size: 529
+    - path: data/processed/X_test.npy
+      hash: md5
+      md5: e706292eb710d5147dd2f57545e1816c
+      size: 638600
+    - path: data/processed/X_train.npy
+      hash: md5
+      md5: c915fef183e4f935a19ad16081d954b4
+      size: 2552832
+    - path: data/processed/y_test.npy
+      hash: md5
+      md5: 84d3a1e5a5fb761f10814952629e3111
+      size: 17384
+    - path: data/processed/y_train.npy
+      hash: md5
+      md5: 4011cd52afc0b45f905df4c52d57b85e
+      size: 69120
+    - path: src/model/train_model.py
+      hash: md5
+      md5: 5749fb81e36e7f4ddd7b49d0ea11c24d
+      size: 3914
+    - path: src/utils/common.py
+      hash: md5
+      md5: 95f0ae6cbee3f40a9ff05f68cb9e0fe1
+      size: 1261
+    params:
+      params.yaml:
+        model_trainer.random_forest:
+          n_estimators: 200
+          random_state: 42
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 03186624a2a8e66ab26070ad5b0c1293
+      size: 151048849
+    - path: reports/metrics.json
+      hash: md5
+      md5: c7d95a8ae1aa2517c88300661234e8f2
+      size: 567
