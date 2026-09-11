@@ -174,10 +174,23 @@ Task type: **regression**. Evaluation metrics: R², MAE, RMSE.
       missing-fields list.
 
 ### Phase 9 — Testing
-- [ ] Unit tests for `build_features.py` (transformer shape/columns) and `predict_model.py`
-      (deterministic output for a fixed input).
-- [ ] A smoke test that hits the Flask `/predict` endpoint end-to-end (`test_environment.py`
-      already exists as a stub for environment checks — extend or add alongside it).
+- [x] Added `pytest` + `pytest.ini` (`pythonpath = .`, `testpaths = tests`) so `import src`/`import main`
+      resolve without an editable install.
+- [x] `tests/test_build_features.py` — `build_preprocessor` routes categorical/numeric columns
+      correctly, output shape matches row count, and unseen categories at transform time don't raise.
+- [x] `tests/test_predict_model.py` — `predict()` is deterministic for a fixed input and raises
+      `KeyError` on missing fields.
+- [x] `tests/test_app.py` — Flask smoke test via `app.test_client()`: `/health`, a full `/predict`
+      payload, a payload missing fields (400), and a non-JSON body (400).
+
+  > Design note: `tests/conftest.py` fits a tiny synthetic preprocessor+model in-memory and
+  > monkeypatches `predict_model._preprocessor`/`_model` rather than loading the real
+  > `models/*.pkl`. Those are DVC-tracked, not git-tracked — a fresh clone won't have them without
+  > `dvc pull`/`dvc repro` first, which would make the test suite depend on pipeline state instead
+  > of just the code. Verified by moving `models/` aside entirely: all 9 tests still pass.
+  > `test_environment.py` (Python-version check) was left as-is — different purpose, not a pytest suite.
+
+- [x] Ran `python -m pytest -v`: **9 passed**.
 
 ### Phase 10 — CI (optional but recommended)
 - [ ] GitHub Actions workflow: install deps, run tests, run `dvc repro --dry` (or a lightweight

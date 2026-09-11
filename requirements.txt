@@ -13,3 +13,4 @@ joblib
 types-pyYAML
 Flask
 Flask-Cors
+pytest
