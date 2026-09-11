@@ -197,9 +197,50 @@ Task type: **regression**. Evaluation metrics: R², MAE, RMSE.
       subset) on PRs to catch pipeline breakage before merge.
 
 ### Phase 11 — Deployment
-- [ ] Dockerize the Flask app (`Dockerfile` + `requirements.txt`).
-- [ ] Deploy (target platform TBD — e.g. Render/EC2/Azure) pulling the "production" model from
-      the MLflow registry at container start rather than baking a stale `.pkl` into the image.
+- [x] Dockerize the Flask app: `Dockerfile` (`python:3.13-slim`, gunicorn, listens on port 7860),
+      `.dockerignore`. Kept — still usable for local/self-hosted/other-platform deployment even
+      though it's not what ended up on Hugging Face (see below).
+- [x] Target platform decided: **Hugging Face Spaces**, but the **SDK flipped from Docker to
+      Gradio partway through** — the user's HF account shows Docker Spaces gated behind a paid
+      plan (Static/Gradio free, Docker marked "Paid"). Gradio doesn't change what "end-to-end
+      MLOps" means here: ingestion/features/training/tracking (DVC+MLflow/DagsHub)/tests all stay
+      exactly as built — only the serving presentation layer changed. Gradio also auto-generates
+      a REST API endpoint alongside the UI, so this isn't even a capability downgrade.
+
+  > Design note: baking `models/model.pkl` (145MB) + `models/preprocessor.pkl` into the image via
+  > `COPY` rather than pulling from the MLflow registry at container start. Reason: our DVC remote
+  > (`local_s3/`) is a local folder, not reachable from HF's build servers, and MLflow model-registry
+  > pull-at-startup adds a DagsHub auth dependency to the serving container for no real benefit at
+  > this project's scale. Tradeoff: redeploying after retraining means rebuilding the image (or
+  > later wiring a registry pull — noted as a fast-follow, not done now).
+  > Also pinned `scikit-learn==1.8.0` and `joblib==1.5.3` in `requirements-serving.txt` — the
+  > versions the model was actually pickled with — so the container can't silently drift onto an
+  > incompatible sklearn version at build time.
+  > Split out `requirements-serving.txt` (Flask/gunicorn/pandas/numpy/scikit-learn/joblib/
+  > python-box/pyYAML/ensure only) from the full `requirements.txt`, after the first Docker build
+  > attempt spent ~5 minutes installing the entire training/dev toolchain (mlflow, dagshub, dvc,
+  > matplotlib, pytest, celery, fastapi, sqlalchemy...) into what should be a small serving image.
+  > The slim build finished dependency install in ~99s.
+
+- [x] Built and tested the image locally end to end: `docker build` → `docker run -p 7860:7860` →
+      `/health` returned `{"status":"ok"}`, `/predict` returned the same price ($21,551.11) as the
+      non-containerized test earlier, and a missing-fields request correctly 400'd. Final image
+      size: ~1.04GB (dominated by the 145MB model + scipy/numpy/pandas/scikit-learn wheels).
+- [x] Built `space/` — a self-contained Gradio app for the HF Space: `space/app.py` (loads
+      `models/*.pkl` relative to itself rather than importing `src`, so the folder can be copied
+      standalone into a fresh Space repo), `space/requirements.txt` (gradio + the same pinned
+      `scikit-learn==1.8.0`/`joblib==1.5.3`), `space/README.md` (Spaces frontmatter, `sdk: gradio`).
+      Dropdown choices, year range, engine-size range etc. pulled from the actual training data,
+      not guessed.
+- [x] Tested locally end to end: installed `gradio`, called `predict_price()` directly (same
+      £21,551.10 as every earlier test), then launched the real Gradio server and hit its
+      auto-generated REST endpoint (`POST /gradio_api/call/predict_price` → poll by `event_id`) —
+      also returned £21,551.10. Confirmed `python -m pytest` (9 passed) still green after the
+      gradio install touched shared `fastapi`/`starlette` versions.
+- [ ] Push `space/` to an actual Hugging Face Space (needs the user's HF login — not something
+      done from here): create a Space with SDK **Gradio**, then either copy `space/`'s contents
+      into that Space's git repo and push, or `huggingface-cli upload`. Confirm it builds and the
+      public URL serves predictions.
 
 ### Phase 12 — Monitoring & maintenance
 - [ ] Log incoming prediction requests/responses for later drift analysis.

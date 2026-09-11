@@ -1,0 +1,10 @@
+Flask
+Flask-Cors
+gunicorn
+pandas
+numpy
+scikit-learn==1.8.0
+joblib==1.5.3
+python-box
+pyYAML
+ensure

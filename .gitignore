@@ -81,6 +81,10 @@ target/
 # model/pipeline artifacts are versioned with DVC, not git
 /models/*.pkl
 
+# local copy of model artifacts for testing the Gradio Space app; pushed separately
+# to the HF Space's own git repo (with git-lfs), not to this GitHub repo
+/space/models/*.pkl
+
 # Mac OS-specific storage files
 .DS_Store
 

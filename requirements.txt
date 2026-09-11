@@ -4,13 +4,15 @@ dagshub
 dvc
 matplotlib
 numpy
-scikit-learn
+scikit-learn==1.8.0
 python-box
 pyYAML
 tqdm
 ensure
-joblib
+joblib==1.5.3
 types-pyYAML
 Flask
 Flask-Cors
 pytest
+gunicorn
+gradio
